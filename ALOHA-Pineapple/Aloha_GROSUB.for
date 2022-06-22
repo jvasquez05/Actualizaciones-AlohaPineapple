@@ -48,13 +48,13 @@
 !=======================================================================
 
       SUBROUTINE Aloha_GROSUB (CONTROL, ISWITCH, 
-     &    DTT, ISTAGE, NH4, NO3, SOILPROP, SW, SWFAC,         !Input
+     &    DTT, ISTAGE, NH4, NO3, SOILPROP, SW, SWFAC,!Input
      &    SUMDTT, TBASE, TURFAC, WEATHER, XSTAGE,             !Input
      &    AGEFAC, BASLFWT, BIOMAS, CRWNWT, EYEWT, FBIOM,      !Output
-     &    FLRWT, FRTWT, FRUITS, GPP, GPSM, GRAINN, GRORT,     !Output
-     &    LAI, LFWT, LN, NSTRES, RLV, ROOTN, RTWT,            !Output
-     &    SENESCE, SKWT, STMWT, STOVN, STOVWT,  TEMPM,        !Output
-     &    UNH4, UNO3, WTNUP, WTINITIAL, XGNP, YIELD)          !Output
+     &    FLRWT, FRTWT, FRUITS, GPP, GPSM, GRAINN, GRORT, SUMSRADGRO, SUMSRAD, SRADGRO, PARGRO, SUMPARGRO, SUMPAR,    !Output
+     &    LAI, LFWT, LN, NSTRES, RLV, ROOTN, RTWT, SUMDTTGRO, SUMTMAXGRO, !Output
+     &    SENESCE, SKWT, STMWT, STOVN, STOVWT,  TEMPM, SUMTMAX, TMAXGRO, GDDFR, !Output
+     &    UNH4, UNO3, WTNUP, WTINITIAL, XGNP, YIELD)!Output QUITAR SUMDTTGRO DE AQUI Y YA SALE TODO
 
       USE Aloha_mod
       USE Interface_SenLig_Ceres
@@ -76,17 +76,19 @@
 
       CHARACTER*6, PARAMETER :: ERRKEY ='GROSUB'
       CHARACTER*78 MSG(2)
-      INTEGER I, ISTAGE, ISTAGE_old, IDURP, YRDOY 
-      INTEGER STGDOY(20)
+      INTEGER I, ISTAGE, ISTAGE_old, IDURP, YRDOY
+      INTEGER STGDOY(20), DAP0, DAP1, DAP2, DAP3, DAP4, DAP5, DAP6, DAP7, DAP8, DAP9, DAP10, DAP11, DAP12, DAP13, DAP14, DAP15, DAP16, DAP17, DAP18, DAP19, YRPLT
       INTEGER DYNAMIC
-      REAL    PLA, LAI, BIOMAS, LFWT, BASLFWT, STMWT, STOVWT, WTINITIAL
-      REAL    PLAG, RTWT, FLRWT, GROSTM, SENLA, SLAN, GRORT
-      REAL    GROBSL, GROLF, CUMPH, LN, CUMDEP, SUMP, PLAMX, GROFLR
-      REAL    GROCRWN, GROFRT, FRTWT, CRWNWT, SKWT, GROSK, PTF, EYEWT
-      REAL    SWMAX, SWMIN, NDEF3, NSTRES, AGEFAC, LIFAC
-      REAL    PAR, CC, TRF2, CARBO, SWFAC, TEMPM  !,TRNU
-      REAL    DTT, TURFAC, XN, CMF, TOTPLTWT, SUMDTT, GPP
-      REAL    PDWI, PGRORT, DM, FBIOM, MAXLAI, PHOTOSYNEYE, FRUITS
+      REAL    PLA, LAI, BIOMAS, LFWT, BASLFWT, STMWT, STOVWT, WTINITIAL, WTNEWCASE12
+      REAL    RLAE13, RLDW13, RBWTDW13, RSTMWT13, LAI13, GDDFR12, GDDFR13, PLA12, PLA13, LFWT12, LFWT13, BASLFWT12, BASLFWT13, STMWT12, STMWT13 !CASE 13
+      REAL    RLAE1, RLDW1, RBWTDW1, RSTMWT1, LAI1, GDDFR1, PLA1, LFWT1, BASLFWT1, STMWT1 !CASE 1
+      REAL    PLAG, RTWT, FLRWT, GROSTM, SENLA, SLAN, GRORT, GDDFR, TMAXGRO, PLACASE12
+      REAL    GROBSL, GROLF, CUMPH, LN, CUMDEP, SUMP, PLAMX, GROFLR, BASLFWTCASE12
+      REAL    GROCRWN, GROFRT, FRTWT, CRWNWT, SKWT, GROSK, PTF, EYEWT, STMWTCASE12
+      REAL    SWMAX, SWMIN, NDEF3, NSTRES, AGEFAC, LIFAC, SRADGRO, PARGRO
+      REAL    PAR, CC, TRF2, CARBO, SWFAC, TEMPM, LFWTCASE12  !,TRNU, 
+      REAL    DTT, TURFAC, XN, CMF, TOTPLTWT, SUMDTT, GPP, SUMTMAX, SUMDTTGRO, SUMTMAXGRO
+      REAL    PDWI, PGRORT, DM, FBIOM, MAXLAI, PHOTOSYNEYE, FRUITS, SUMSRADGRO, SUMSRAD, SUMPARGRO, SUMPAR
       REAL    YIELD, GPSM, XSTAGE  !, FDMC
 
       REAL    CO2, SRAD, TMIN, TMAX
@@ -121,6 +123,7 @@
 !=======================================================================
       ISWNIT     = ISWITCH % ISWNIT
       PLA        = 0.0
+      PLACASE12  = 0.0
       LAI        = 0.0
       BIOMAS     = 0.0
       LFWT       = 0.0
@@ -130,7 +133,13 @@
       SWFAC      = 1.0
       TURFAC     = 1.0
       LN     = 0.0
-
+      SUMDTTGRO = 0.0
+      SUMTMAXGRO = 0.0
+      SUMTMAX = 0.0
+      SUMSRADGRO = 0.0
+      SUMSRAD = 0.0
+      SUMPARGRO = 0.0
+      SUMPAR = 0.0
       FLRWT  = 0.0
       FRTWT  = 0.0
       CRWNWT = 0.0
@@ -181,6 +190,13 @@
       DTT    = 0.0
       CANNAA = 0.05
       CANWAA = 0.0
+      SUMDTTGRO = 0.0
+      SUMTMAXGRO = 0.0
+      SUMTMAX = 0.0
+      SUMSRADGRO = 0.0
+      SUMSRAD = 0.0
+      SUMPARGRO = 0.0
+      SUMPAR = 0.0
 
       PLAG    = 0.0   ! PLAG (cm^2) is daily green leaf area growth
       GROSTM  = 0.0   ! GROSTM (g/plant/day) is daily stem growth
@@ -212,7 +228,7 @@
 
       CO2X = SPECIES % CO2X
       CO2Y = SPECIES % CO2Y
-      CC   = SPECIES % CONV
+      CC   = SPECIES % CONV      !modifica PCARB este dato esta en el archivo especies (CONV) y podria ajustar la biomasa con una ecuacion de regresion aqui. Zhang dijo que no tenia datos de uso radiacion use eficience para la piÃ±a yo si los tengo. En maiz usan 5g/Mj en piÃ±a Zhang uso 2.5 (este es el valor CONV). Estos cambio se darian a partir del ciclo 1.
       CMF  = Species % CMFC
       LIFAC= Species % LIFAC
 
@@ -280,13 +296,13 @@
 
       TEMPM = 0.6*TMIN + 0.4*TMAX
       SELECT CASE (ISTAGE)
-        CASE (1,2,3,4,5,10,11,12)                          ! CASE (1,2,3,7,8,9)  JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
+        CASE (1,2,3,4,5,10,11,12,13)    !CASE (1,2,3,4,5,6,10,11,12)                      ! CASE (1,2,3,7,8,9)  JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
           IF (TEMPM .LE. 25.0) THEN
-             PRFT = 1.0-0.001*(TEMPM-25.0)**2
+             PRFT = 1.0-0.001*(TEMPM-25.0)**2              !  PRFT   : Photosynthetic reduction factor for low and high temperatures
            ELSEIF (TEMPM .LT. 29.0) THEN
              PRFT = 1.0-0.056*(TEMPM-25.0)**2
            ELSE
-             PRFT = 0.1
+             PRFT = 0.1                                !OTRA OPORTUNIDAD DE MODIFICAR LO DE CLIMA CALIENTE, PERO HAY QUE VER EL IMPACTO SOBRE LA BIOMASA DE PRFT
           ENDIF
         CASE (6,7,8,9)                                   !CASE (4,5,6) JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
           PRFT = 1.0-0.005*((0.4*TMIN+0.6*TMAX)-26.)**2
@@ -296,64 +312,80 @@
       !
       ! Temperature factor
       !
-      IF (TEMPM .LT. 15.0) THEN
-         TRF2 = 0.45
-       ELSEIF (TEMPM .GE. 15.0 .AND. TEMPM .LT. 30.0) THEN
+      IF (TEMPM .LT. 15.0) THEN                               ! 
+         TRF2 = 0.45                                          ! 
+       ELSEIF (TEMPM .GE. 15.0 .AND. TEMPM .LT. 30.0) THEN    ! Con el el OUTPUT Plant Gro.out puedo ir cuadrando las variables del archivo T.
          TRF2 = 0.082*EXP(0.1*TEMPM)
        ELSE
-         TRF2 = 1.65
+         TRF2 = 1.65                                          ! TRF2 = 1.65 SERï¿½ QUE ESTE VALOR MODIFICA EL PESO DE LA ZONA CALIENTE?
       ENDIF
 
-      IF (ISTAGE .GE. 8 .AND. ISTAGE .LT. 10) THEN                 !IF (ISTAGE .GE. 4 .AND. ISTAGE .LT. 7) THEN    JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
-         CARBO = PCARB*AMIN1(PRFT,0.55+0.45*SWFAC,NSTRES)
+      IF (ISTAGE .GE. 6 .AND. ISTAGE .LT. 10) THEN                 !IF (ISTAGE .GE. 4 .AND. ISTAGE .LT. 7) THEN    JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
+         CARBO = PCARB*AMIN1(PRFT,0.55+0.45*SWFAC,NSTRES)          !IF (ISTAGE .GE. 8 .AND. ISTAGE .LT. 10) THEN ojo la linea anterior estaba asï¿½ el 25/03/2021
        ELSE
          CARBO = PCARB*AMIN1(PRFT,SWFAC,NSTRES)
       ENDIF
       DTT = AMAX1 (DTT,0.0)
-
-!-----------------------------------------------------------------
-      IF (ISTAGE .LE. 4) THEN                                    ! IF (ISTAGE .LE. 3) THEN   JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
+      
+!----------------------------------------------------------------- OJO AQUI LOGRO MODIFICAR EL NUMERO DE HOJAS
+      IF (ISTAGE .LE. 4) THEN                                    ! Creo que si aquï¿½ en lugar de LE coloco LT deja de salir mï¿½s hojas o modificarse LAI (no recuerdo que es) despuï¿½s de forza.
 !                                                                ! IF (ISTAGE .LE. 3) THEN  debe ser 4 para que deje de producir hojas a partir de forza.
-!        Calculate leaf emergence                                ! Originalmente lo había modificado como 5 pero era 4. Sucerá lo mismo más abajo?
+!        Calculate leaf emergence                                ! Originalmente lo habï¿½a modificado como 5 pero era 4. Sucerï¿½ lo mismo mï¿½s abajo?
 !        The first 5 leaves grow faster than other leaves, used for maize
 !         
-         PC = 1.0                       ! Calculate leaf emergence
-         IF (CUMPH .LE. 15.0) THEN
-            PC = 1.25 - 0.25/15.0*CUMPH
-         ENDIF
+         PC = 1.0                                             ! PC Used to compute fraction of phyllochron interval occurring today
+         IF (CUMPH .LE. 13.0) THEN                            ! Condicion para detonar la ecuacion para cuando hay 13 o menos de 13 hojas. 
+            PC = 0.85 - 0.25/13*CUMPH                         ! leaves from first foliar cycle are slower than second cicle and third cycle.
+          ELSEIF (CUMPH .GE. 13.0 .AND. CUMPH.LE. 26.0) THEN  ! Condicion para detonar la ecuacion para cuando hay mas de 13 y menos de 26 hojas.
+         PC = 1.25 - 0.25/7.3*CUMPH      !0.4                 ! 
+          ELSE                                                ! Condicion que se detona cuando no se cumple ninguna de las anteriores (mas de 26 hojas).
+         PC = 1.25 - 0.25/8.35*CUMPH     !0.5                 ! SI BAJO SUBO Prueba cuando tenga datos de mas de 26 hojas tengo que revisar que numero debe ser este 10.8.
+      ENDIF
 !         
 !        TI is the fraction of leaf emerged for a day.  It is calculated from
 !        the following equations
 !        
 !        Correcting water stress effect and effect due to shading.
-!        
-         IF (ISTAGE .EQ. 5) THEN                             !  IF (ISTAGE .EQ. 3) THEN   JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
-            IF (TEMPM .GT. TBASE) THEN                       ! En el ISTAGE anterior note que no se cumple la regla de sumar 2 al ISTAGE original, así que
-               IF ((LN*PLTPOP) .GT. 550.0) THEN              ! debo recordar que si calibrar un dato que no es posible calibrar con los coeficientes PIALO              
-                  TI = TURFAC*(1.0/PHINT)*0.5*(DTT-2.0)/PC   ! debería intentar revisando si estos ISTAGES están bien colocados, o por ejemplo en lugar de 5 es 4 también.
-                ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-                  TI = TURFAC*(1.0/PHINT)*(-0.001*LN*PLTPOP+1.05)*
-     &                 (DTT-2.0)/PC
+!                                                            OJO AQUI LOGRO BAJAR EL LAI
+         IF (ISTAGE .LE. 4) THEN                             !   
+            IF (TEMPM .GT. TBASE .AND. SRAD .LT. 24) THEN    ! Ojo para Typic        
+               IF ((LN*PLTPOP) .LE. (13*PLTPOP)) THEN        ! Condicion para detonar la ecuacion para cuando hay 13 o menos de 13 hojas.               
+                  TI = TURFAC*(1.0/PHINT)*(DTT-2.0)/PC       !
+               ELSEIF ((LN*PLTPOP) .GT. (13*PLTPOP) .AND.    ! Condicion para detonar la ecuacion para cuando hay mas de 13 y menos de 26 hojas.
+     &          (LN*PLTPOP) .LE. (26*PLTPOP) ) THEN          !               
+                  TI = TURFAC*(1.0/PHINT)*1.01*(DTT-2.0)/PC 
+                   
+                  ELSEIF ((LN*PLTPOP) .LE. (39*PLTPOP)) THEN ! Condicion para detonar la ecuacion para cuando hay 39 o menos de 39 hojas. 
+               TI = TURFAC*(1.0/PHINT)*(DTT-2.0)/PC !  Condicion para detonar la ecuacion para cuando hay mas de 26 y menos de 39 hojas.
+     
+                        
                 ELSE
-                  TI = TURFAC*(1.0/PHINT)*(DTT-2.0)/PC
+                  TI = TURFAC*(1.0/PHINT)*1.05*(DTT-2.0)/PC  !Esta es la ecuacion que se detona cuando no se cumple ninguna de las anteriores.
                ENDIF
-             ELSE
-               TI = 0.0   ! If mean air temperature is less than Tbase,
-            ENDIF         ! no leaf emerges
-          ELSE
-            IF (TEMPM .GT. TBASE) THEN
-               IF ((LN*PLTPOP) .GT. 550.0) THEN                       
-                  TI = TURFAC*(1.0/PHINT)*0.5*DTT/PC
-                ELSEIF ((LN*PLTPOP).GE.50.0) THEN
-                  TI = TURFAC*(1.0/PHINT)*(-0.001*LN*PLTPOP+1.05)*
+            ELSE
+                IF (TEMPM .GT. TBASE .AND. SRAD .GE. 24) THEN!Ojo para Warm
+               IF ((LN*PLTPOP) .LE. (13*PLTPOP)) THEN        !  Condicion para detonar la ecuacion para cuando hay 13 o menos de 13 hojas.              
+                  TI = TURFAC*(1.05/PHINT)*DTT/PC
+                
+                 ELSEIF ((LN*PLTPOP) .GT. (13*PLTPOP)) THEN  !  Condicion para detonar la ecuacion para cuando hay mas de 13 y menos de 26 hojas.             
+                  TI = TURFAC*(1.0/PHINT)*0.5*DTT/PC   
+                  
+                  
+                  ELSEIF ((LN*PLTPOP).LE.(26*PLTPOP)) THEN
+                  TI = TURFAC*(1.0/PHINT)*(-0.001*LN*PLTPOP+1.05)* !  Condicion para detonar la ecuacion para cuando hay mas de 26 y menos de 39 hojas.
      &                 DTT/PC
                 ELSE
-                  TI = TURFAC*(1.0/PHINT)*DTT/PC
+                  TI = TURFAC*(1.0/PHINT)*1.05*DTT/PC        ! Esta es la ecuacion que se detona cuando no se cumple ninguna de las anteriores.
                ENDIF
              ELSE
 !              If mean air temperature is less than Tbase, no leaf emerges
                TI = 0.0     
             ENDIF
+                
+            ENDIF         
+          IF (ISTAGE .EQ. 4) THEN     !Esta etapa es forzamiento por lo tanto no se producen mÃ¡s hojas.
+           TI = 0.0    
+           ENDIF
          ENDIF
 
 !        CUMPH is number of expanded leaves. It is updated daily
@@ -361,51 +393,42 @@
 !        XN is leaf number of the oldest expanding leaf
          XN    = CUMPH +  1 
          LN    = XN         ! LN is leaf number
-      ENDIF
+      ENDIF  ! CIERRA IF (ISTAGE .LE. 4) THEN    
 
 !-----------------------------------------------------------------
 !  ISTAGE Definition
-!     7 - Preplanting
-!     8 - Planting to root initiation
-!     9 - Root initiation to first new leaf emergence
-!     1 - First new leaf emergence to net zero root growth
-!     2 - Net zero stem growth to forcing
-!     3 - Forcing to sepals closed on youngest flowers
-!     4 - SCY to first open flower
-!     5 - Fruit growth
-!     6 - Physiological maturity
+!     7 - Preplanting                                                 10         11 Start simulation to planting
+!     8 - Planting to root initiation                                 11         12 Planting to Root Initiation
+!     9 - Root initiation to first new leaf emergence                 12         13 Root Initiation to First New Leaf
+!     1 - First new leaf emergence to net zero root growth            1           1 First new leaf emergence to foliar cycle 1
+!     2 - Net zero stem growth to forcing                             2,3,4   2,3,4 Foliar cycle 1 to foliar cycle 2,3 and forcing 
+!     3 - Forcing to sepals closed on youngest flowers                5,6         5 Forcing to Open Heart
+!     4 - SCY to first open flower                                    7           6 Open Heart to EarlyAnthesis
+!     5 - Fruit growth                                                8           7 Early Anthesis to Last Anthesis
+!     6 - Physiological maturity                                      9           8 Last Anthesis to Physiological maturity
+!-----------------------------------------------------------------                9 Physiology to Harvest
+      SELECT CASE (ISTAGE)                                            !           10 Harvest
 !-----------------------------------------------------------------
-      SELECT CASE (ISTAGE)
-!-----------------------------------------------------------------
-      CASE (1)
+      CASE (1)     !CASE (1)
         !
         ! First new leaf emergence to net zero root growth
         !
-        SELECT CASE (PMTYPE)
-          CASE (0)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                          
-               PLAG = CMF*1.75*(33.0+7.5*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-               PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
-     1                *(-0.001*LN*PLTPOP+1.05)
-             ELSE
-               PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
-           ENDIF
-          CASE (1)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                   
+        
+            IF ((LN*PLTPOP) .GT. (0*PLTPOP)) THEN                   
                PLAG = CMF*0.77*(174.0+16.0*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
+               
+             ELSEIF ((LN*PLTPOP) .GE. (1*PLTPOP)) THEN
                PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
      1                *(-0.001*LN*PLTPOP+1.05)
              ELSE
                PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
             ENDIF
-        END SELECT
+        
 !        
 !       Green leaf weight is calculated from leaf area
 !        
         GROLF  = PLAG*(1.0/((85.0*EXP(-XN*0.012))*TRF2))
-        GROBSL = 0.42*GROLF
+        GROBSL = 0.42*GROLF                                                           ! GROBSL = 0.42*GROLF
 !        
 !       Daily root growth is calculated from carbo and daily leaf weight
 !       
@@ -429,38 +452,29 @@
 C       PLA     = (LFWT+GROLF)**0.87*96.0
         LFWT    = LFWT+GROLF      !Update green leaf weight
         BASLFWT = BASLFWT+GROBSL  !Update basal leaf weight
-        PLA     = PLA+PLAG        !Update total leaf area.
-
+        PLA     = PLA+PLAG        !Update total leaf area.         
+                                                                  
         IF (GROLF .GT. 0.0) THEN
            SLAN = PLA/1000.       !assumed 0.001 leaf area senescence
         ENDIF
-        LFWT = LFWT-SLAN/600.0    !recalculate green leaf weight
-
+        LFWT = LFWT-SLAN/600.0    !recalculate green leaf weight  QUE SIGNIFICA EL 600 LFWT = LFWT-SLAN/600.0 SI LO PONGO EN 100 BAJA LWAD EN ARCHIVO T
+                                  ! Deduciendolo de otras ecuaciones (que podrï¿½an no tener relaciï¿½n) el 600 es el peso total de la planta TOTPLTWT en gramos
+                                  !Cuando tenga datos del primer ciclo foliar debo ver quï¿½ es lo que calcula para la BIOMASA y de ahï¿½ ver como ajusto ese dato
 !-----------------------------------------------------------------
-      CASE (2)
+      CASE (2,3,4)    !CASE (2,3,4)                     ! AQUI ES DONDE TENGO QUE HACER MODIFICACIONES PARA CALIBRAR DE CICLO 1 A CICLO 3.
         !
-        ! Net zero stem growth to forcing
-        !
-        SELECT CASE (PMTYPE)
-          CASE (0)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                        
-               PLAG = CMF*1.75*(33.0+7.5*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
+        ! Net zero stem growth to forcing               ! AQUI ES DONDE HAY QUE HACER LOS CALCULOS PARA AJUSTAR O DIFERENCIAR LAS ZONAS EN LOS PESOS
+        !                                               ! DESPUES DE LAS ETAPAS 11, 12 Y 1
+       
+            IF ((LN*PLTPOP) .GE. (13*PLTPOP)) THEN                     ! OJO SI ESTO ES ASï¿½ ENTONCES SI LOGRO MODIFICAR EL INTERVALO DEL FILOCRON PARA LA ZONA TIPICA Y CALIENTE
+               PLAG = CMF*1.75*(33.0+7.5*XN)*0.5*TI*TURFAC             ! PODRï¿½A ENTONCES ESTO HACER QUE SE DIFERENCIEN EN PESO,
+             ELSEIF ((LN*PLTPOP) .GE. (26*PLTPOP)) THEN
                PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
      1               *(-0.001*LN*PLTPOP+1.05)
              ELSE
                PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
            ENDIF
-          CASE (1)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                      
-               PLAG = CMF*0.77*(174.0+16.0*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-               PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
-     1               *(-0.001*LN*PLTPOP+1.05)
-             ELSE
-               PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
-            ENDIF
-        END SELECT
+        
 
         GROLF  = PLAG*(1/((85*EXP(-XN*0.012))*TRF2))
         GROBSL = 0.42*GROLF
@@ -500,165 +514,29 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
         LFWT = LFWT-SLAN/600.0
 
 !-----------------------------------------------------------------
-!-----------------------------------------------------------------JVJ NEW
-      CASE (3)                                           !CASE (2)  JVJ  Case duplicated because 2 stages in vegetative phase were included 
-        ! Net zero stem growth to forcing
-        !
-        SELECT CASE (PMTYPE)
-          CASE (0)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                       
-               PLAG = CMF*1.75*(33.0+7.5*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-               PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
-     1               *(-0.001*LN*PLTPOP+1.05)
-             ELSE
-               PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
-           ENDIF
-          CASE (1)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                      
-               PLAG = CMF*0.77*(174.0+16.0*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-               PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
-     1               *(-0.001*LN*PLTPOP+1.05)
-             ELSE
-               PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
-            ENDIF
-        END SELECT
 
-        GROLF  = PLAG*(1/((85*EXP(-XN*0.012))*TRF2))
-        GROBSL = 0.42*GROLF
-        !
-        ! Calculation of daily stem growth
-        !
-        GROSTM = 0.52*GROBSL
-        GROSTM = AMIN1 (GROSTM,GROBSL)
-        !
-        ! Check the balance of supply and demand
-        !
-        GRORT = CARBO - GROLF - GROBSL - GROSTM
-        IF (GRORT .LT. 0.15*CARBO) THEN
-           IF (GROLF .GT. 0.0 .OR. GROBSL .GT. 0.0 .OR.
-     &         GROSTM .GT. 0.0) THEN
-              GRF   = CARBO*0.9/(GROLF+GROBSL+GROSTM)
-              GRORT = CARBO*0.1
-            ELSE
-              GRF = 1.0
-           ENDIF
-
-           GROLF  = GROLF  * GRF
-           GROBSL = GROBSL * GRF
-           GROSTM = GROSTM * GRF
-
-           PLAG   = GROLF*((85.0*EXP(-XN*0.012))*TRF2)
-        ENDIF
-
-        LFWT    = LFWT    + GROLF
-        BASLFWT = BASLFWT + GROBSL
-        STMWT   = STMWT   + GROSTM
-        PLA     = PLA     + PLAG
-
-        IF (GROLF .GT. 0.0) THEN
-           SLAN = PLA/1000.0
-        ENDIF
-        LFWT = LFWT-SLAN/600.0
-        
-        
-      CASE (4)                                           !CASE (2)    JVJ  Case duplicated because 2 stages in vegetative phase were included 
-        !
-        ! Net zero stem growth to forcing
-        !
-        SELECT CASE (PMTYPE)
-          CASE (0)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                      
-               PLAG = CMF*1.75*(33.0+7.5*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-               PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
-     1               *(-0.001*LN*PLTPOP+1.05)
-             ELSE
-               PLAG = CMF*1.75*(33.0+7.5*XN)*TI*TURFAC
-           ENDIF
-          CASE (1)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                      
-               PLAG = CMF*0.77*(174.0+16.0*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-               PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
-     1               *(-0.001*LN*PLTPOP+1.05)
-             ELSE
-               PLAG = CMF*0.77*(174.0+16.0*XN)*TI*TURFAC
-            ENDIF
-        END SELECT
-
-        GROLF  = PLAG*(1/((85*EXP(-XN*0.012))*TRF2))
-        GROBSL = 0.42*GROLF
-        !
-        ! Calculation of daily stem growth
-        !
-        GROSTM = 0.52*GROBSL
-        GROSTM = AMIN1 (GROSTM,GROBSL)
-        !
-        ! Check the balance of supply and demand
-        !
-        GRORT = CARBO - GROLF - GROBSL - GROSTM
-        IF (GRORT .LT. 0.15*CARBO) THEN
-           IF (GROLF .GT. 0.0 .OR. GROBSL .GT. 0.0 .OR.
-     &         GROSTM .GT. 0.0) THEN
-              GRF   = CARBO*0.9/(GROLF+GROBSL+GROSTM)
-              GRORT = CARBO*0.1
-            ELSE
-              GRF = 1.0
-           ENDIF
-
-           GROLF  = GROLF  * GRF
-           GROBSL = GROBSL * GRF
-           GROSTM = GROSTM * GRF
-
-           PLAG   = GROLF*((85.0*EXP(-XN*0.012))*TRF2)
-        ENDIF
-
-        LFWT    = LFWT    + GROLF
-        BASLFWT = BASLFWT + GROBSL
-        STMWT   = STMWT   + GROSTM
-        PLA     = PLA     + PLAG
-
-        IF (GROLF .GT. 0.0) THEN
-           SLAN = PLA/1000.0
-        ENDIF
-        LFWT = LFWT-SLAN/600.0
-
-!-----------------------------------------------------------------JVJ NEW END
        
         
-      CASE (5)                                           ! CASE (3)
+      CASE (5,6)      ! CASE (5,6)                                      ! CASE (3)
         !
         ! Forcing to sepals closed on youngest flowers
         !
-        SELECT CASE (PMTYPE)
-          CASE (0)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN               
-               PLAG = CMF*2.*(33.0+7.5*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
+          IF ((LN*PLTPOP) .GT. (26*PLTPOP)) THEN               
                PLAG = CMF*2.*(33.0+7.5*XN)*TI*TURFAC
-     1               *(-0.001*LN*PLTPOP+1.05)
+             ELSEIF ((LN*PLTPOP) .GE. (39*PLTPOP)) THEN
+               PLAG = CMF*2.*(33.0+7.5*XN)*0.5*TI*TURFAC          !Cambios aquï¿½ repercuten de Open Heart en adelante.
+     &               *(-0.001*LN*PLTPOP+1.05)
              ELSE
                PLAG = CMF*2.*(33.0+7.5*XN)*TI*TURFAC
             ENDIF
-          CASE (1)
-            IF ((LN*PLTPOP) .GT. 550.0) THEN                   
-               PLAG = CMF*2.5*(174.0+16.0*XN)*0.5*TI*TURFAC
-             ELSEIF ((LN*PLTPOP) .GE. 50.0) THEN
-               PLAG = CMF*2.5*(174.0+16.0*XN)*TI*TURFAC
-     1               *(-0.001*LN*PLTPOP+1.05)
-             ELSE
-               PLAG = CMF*2.5*(174.0+16.0*XN)*TI*TURFAC
-            ENDIF
-        END SELECT
+          
 
         GROLF  = PLAG*(1.0/((85*EXP(-XN*0.012))*TRF2))
         GROBSL = 0.42 * GROLF
         GRORT  = 0.05 * GROLF
         GRORT  = AMAX1 (GRORT,0.0)
         GROFLR = (1.26-0.17*PLTPOP+0.0075*PLTPOP**2)*DTT/20.5
-     1           *AMIN1(AGEFAC,TURFAC)
+     &           *AMIN1(AGEFAC,TURFAC)
         GROFLR = AMAX1 (GROFLR,0.0)
         GROSTM = CARBO - GROLF - GROBSL - GRORT - GROFLR
         IF (GROSTM .LT. 0.16*CARBO) THEN
@@ -693,54 +571,8 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
         SUMP  = SUMP  + CARBO !Total biomass cumulated during the stage
         IDURP = IDURP + 1     !Duration of the stage        
 !-----------------------------------------------------------------
-      CASE (6)                !CASE (4)
-        !
-        ! SCY to first open flower
-        !
-        GROFLR = (1.26-0.17*PLTPOP+0.0075*PLTPOP**2)*DTT/20.5*
-     &           AMIN1(AGEFAC,TURFAC)
-        GROFLR = AMAX1 (GROFLR,0.0)
-        GRORT  = 0.05*GROFLR
-
-        IF (TOTPLTWT .LE. 550.0) THEN                                
-           GROSTM = CARBO - GRORT - GROFLR
-           IF (GROSTM .LT. 0.16*CARBO) THEN
-              IF (GRORT .GT. 0.0 .OR. GROFLR .GT. 0.0) THEN
-                 GRF    = CARBO*0.84/(GRORT+GROFLR)
-                 GROSTM = CARBO*0.16
-               ELSE
-                 GRF    = 1.0
-              ENDIF
-              GRORT  = GRORT  * GRF
-              GROFLR = GROFLR * GRF
-              GROSK  = GROSK  * GRF
-           ENDIF
-         ELSE
-           GROSK  = CARBO*0.15
-           GROSTM = CARBO - GROSK - GRORT - GROFLR   !Sucker initiation
-           IF (GROSTM .LE. 0.16*CARBO) THEN
-              IF (GROSK .GT. 0.0 .OR. GROFLR .GT. 0.0 .OR.
-     &            GRORT .GT. 0.0) THEN
-                 GRF = CARBO*0.84/(GRORT+GROFLR+GROSK)
-               ELSE
-                 GRF = 1.0
-              ENDIF
-              GRORT  = GRORT  * GRF
-              GROFLR = GROFLR * GRF
-              GROSK  = GROSK  * GRF
-           ENDIF
-        ENDIF
-
-        IF (GROSTM .GT. 0.2*CARBO) THEN
-           GROSTM = 0.2*CARBO
-        ENDIF
-        STMWT = STMWT + GROSTM
-        FLRWT = FLRWT + GROFLR
-!       FRTWT  = FLRWT*0.7      !CHP 10/14/2017
-!       CRWNWT = FLRWT*0.3      !CHP 10/14/2017
-        SKWT  = SKWT  + GROSK
-
-      CASE (7)                !CASE (4)
+ 
+      CASE (7)        !CASE (7)        !CASE (4)
         !
         ! SCY to first open flower
         !
@@ -788,7 +620,7 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
         SKWT  = SKWT  + GROSK
         
 !-----------------------------------------------------------------
-      CASE (8)                       ! CASE (5)
+      CASE (8)         ! CASE (8)                ! CASE (5)
         !
         ! Fruit growth
         !
@@ -814,9 +646,9 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
 
         IF (PMTYPE .GE. 1) THEN
            IF (SUMDTT .GT. 0.5*P8) THEN    !IF (SUMDTT .GT. 0.5*P4) THEN  IF (SUMDTT .GT. 0.5*P7) THEN
-              IF (SRAD .LT. 12.0) THEN
+              IF (SRAD .LT. 12.0) THEN     
                  GROFRT = GPP*G3*0.001*(0.7+0.3*SWFAC)*(SRAD/12.)
-               ELSEIF (SRAD .LT. 36.0) THEN
+               ELSEIF (SRAD .LT. 36.0) THEN !DEBERIA USAR AQUI 22 Y VER QUE SUCEDE ENTRE LA TIPICA Y LA CALIENTE.
                  GROFRT = GPP*G3*0.001*(0.7+0.3*SWFAC)*(1.5-SRAD/24.)
                ELSE
                  GROFRT = 0.0
@@ -863,7 +695,7 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
         GO TO 1900
 
 1700    SELECT CASE (PMTYPE)
-          CASE (1:12)
+          CASE (1:13)                         ! Tengo que revisar que decï¿½a el original aquï¿½.
             IF (SUMDTT .LT. 0.8*P8) THEN      ! IF (SUMDTT .LT. 0.8*P4) THEN   IF (SUMDTT .LT. 0.8*P7) THEN 
                IF (SRAD .LT. 6.0) THEN
                   GROSTM  = CARBO
@@ -956,7 +788,7 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
         ENDIF
 
 !-----------------------------------------------------------------
-      CASE (9)                   !     CASE (6)
+      CASE (9)      !CASE (9)              !     CASE (6)
 !        
 !       Physiological maturity
 !        
@@ -985,6 +817,9 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
             SLFC = 1.0-0.0005*(LAI-6.0)
          ENDIF
       ENDIF
+      
+           
+      
 
       SLFT = 1.0
       IF (TEMPM .LE. 4.0) THEN
@@ -1005,15 +840,19 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
       SENLA = SENLA + PLAS
       SENLA = AMAX1 (SENLA,SLAN)
       SENLA = AMIN1 (SENLA,PLA)
-      LAI   = (PLA-SENLA)*PLTPOP*0.0001
+      LAI   = (PLA-SENLA)*PLTPOP*0.0001     ! ESTA LINEA GOBIERNA LAI A PARTIR DE ISTAGE 1 LAS OTRAS VER: CASE (11) Y CASE (12)
+                                            ! AQUI ES DONDE PUEDO HACER QUE LAI SEA DIFERENTE EN CLIMA CALIENTE Y CLIMA TIPICO
+      
+        
+      
 
-      IF (LN .GT. 3 .AND .LAI .LE. 0.0 .AND. ISTAGE .LE. 5) THEN             !  IF (LN .GT. 3 .AND .LAI .LE. 0.0 .AND. ISTAGE .LE. 3) THEN JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
+      IF (LN .GT. 3 .AND .LAI .LE. 0.0 .AND. ISTAGE .LE. 6) THEN             !  IF (LN .GT. 3 .AND .LAI .LE. 0.0 .AND. ISTAGE .LE. 3) THEN JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
          WRITE (MSG(1),   2800)
          CALL WARNING(1, ERRKEY, MSG)
 !         IF (IDETO .EQ. 'Y') THEN
 !            WRITE (NOUTDO,2800)
 !         ENDIF
-         ISTAGE = 6                                       ! ISTAGE = 4 JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
+         ISTAGE = 7                                       ! ISTAGE = 4 JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
        ELSE
          IF (ICOLD .GE. 7) THEN
             WRITE (MSG(1),   2800)
@@ -1021,7 +860,7 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
 !            IF (IDETO .EQ. 'Y') THEN
 !               WRITE (NOUTDO,2800)
 !            ENDIF
-           ISTAGE = 7                                     !ISTAGE = 5 JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
+           ISTAGE = 8                                     !ISTAGE = 5 JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
          ENDIF
       ENDIF
 !      
@@ -1037,12 +876,12 @@ C       PLA     = (LFWT+GROLF)**0.87*96.0
 !       less than the plant population (PLTPOP). Need to differentiate
 !       for consistency with daily and seasonal outputs.
       SELECT CASE(ISTAGE)
-      CASE(8,9)                                             ! CASE(5,6)  JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
+      CASE(8,9,10)                                             ! CASE(5,6)  JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
 !       In this case FLRWT is fruit + crown
         BIOMAS   = (LFWT + STMWT + BASLFWT + SKWT)*PLTPOP 
      &                + (FLRWT * FRUITS) 
       CASE DEFAULT
-        BIOMAS   = (LFWT + STMWT + FLRWT + BASLFWT + SKWT)*PLTPOP
+        BIOMAS   = (LFWT + STMWT + FLRWT + BASLFWT + SKWT)*PLTPOP !SUPONGO QUE AQUI SE CALCULA BIOMASA DE CASE 2 EN ADELANTE, LAS OTRAS ESTAN EN CASE 11 Y 12
       END SELECT 
 
       TOTPLTWT =  LFWT + STMWT + FLRWT + BASLFWT + SKWT
@@ -1081,15 +920,13 @@ C-----------------------------------------------------------------------
 
 !       New stage initialization
         SELECT CASE (ISTAGE)
-        CASE (1)
-          PLAG    = 0.0                 
-!          LAI     = PLTPOP*PLA*0.0001  
-!          LFWT    = WTINITIAL*0.53     
-          RTWT    = 0.20                
-!          STMWT   = WTINITIAL*0.115    
-!          BASLFWT = LFWT*0.66          
-          FLRWT   = 0.0                 
-!          STOVWT  = WTINITIAL          
+        CASE (1)      ! CASE (1)
+          PLAG    = 0.0
+
+         
+
+          RTWT    = 0.20                !Es el peso de la raÃ­z         
+          FLRWT   = 0.0
           FLRWT   = 0.0
           GROSTM  = 0.0                 
           SENLA   = 0.0                 
@@ -1099,18 +936,81 @@ C-----------------------------------------------------------------------
           GROLF   = 0.0                 
           CUMPH   = 0.514               
           LN      = 1                   
-          CUMDEP  = 0.0                 
+          CUMDEP  = 0.0
+          
+         
+         
+          YRDOY   = CONTROL % YRDOY   ! Esto hala la fecha del dia que se cumple la etapa iniciacion de la raiz
+          
+          DAP2     = YRDOY-YRPLT      ! Estos son los dÃ­as desde la siembra hasta que se cumple la etapa que hala de Phenol segÃºn su ubicaciÃ³n
+          DAP3     = DAP2 - DAP1      !Resta los dÃ­as pasados de la siembra a la etapa que hala de Phenol a los dÃ­as que habÃ­an pasado de la etapa anterior
+          
+          
+          GDDFR   = (SUMDTTGRO - SUMDTT)/(DAP3)  ! Esto es el promedio de GDD que se acumulan desde la siembra hasta que Phenol detona el evento iniciacion de la raiz.
+          GDDFR1 = GDDFR
+          TMAXGRO = (SUMTMAXGRO - SUMTMAX)/(DAP3)  ! Este esta ok asi porque el dia de la siembra no acumula GDD pero en la etapa siguiente se le debe restar el dia presente de lo contrario la temperatura maxima promedio es mayor a lo correcto
+          SRADGRO = (SUMSRADGRO - SUMSRAD)/(DAP3)  ! Este esta ok asi porque el dia de la siembra no acumula GDD pero en la etapa siguiente se le debe restar el dia presente de lo contrario la radiacion promedio es mayor a lo correcto
+          PARGRO =  (SUMPARGRO - SUMPAR)/(DAP3)    ! Este esta ok asi porque el dia de la siembra no acumula GDD pero en la etapa siguiente se le debe restar el dia presente de lo contrario PAR promedio es mayor a lo correcto
+      
+        
+         RLAE1    = 0.002 * (LOG(GDDFR1/TMAXGRO)) + 0.0018               !r2= 0.8955  Listo variable calibrada en CASE (13)
+         PLA1     = PLA13*EXP((RLAE1*((GDDFR1*TMAXGRO)-0)))                  
+         
+         RLDW1    = 3.8534 * (LOG(GDDFR1/TMAXGRO)) + 3.3698                 !r2= 0.9488 Listo variable calibrada en CASE (13) 
+         LFWT1    = LFWT13*EXP(((RLDW1/1000)*((GDDFR13*TMAXGRO)-0)))        
+         
+         RBWTDW1   = -4.0651 * (LOG(GDDFR1/TMAXGRO)) - 3.2231               !r2= 0.9357 Listo variable calibrada en CASE (13)
+         BASLFWT1 = BASLFWT13*EXP(((RBWTDW1/1000)*((GDDFR1*TMAXGRO)-0)))
+         
+         RSTMWT1  = 1.3401 * (LOG(GDDFR1/TMAXGRO)) + 1.5783                !r2= 0.9171 Listo variable calibrada en CASE (13)
+         STMWT1   = STMWT13*EXP(((RSTMWT1/1000)*((GDDFR1*TMAXGRO)-0)))
+         
+         
+         LAI1    = PLTPOP*PLA1*0.0001
 
-        CASE (2)
-          GROSTM = 0.0  ! Daily stem growth (g/plant/day)
+          LAI         = LAI1                     
+          LFWT        = LFWT1                    
+          BASLFWT     = BASLFWT1                 
+          STMWT       = STMWT1                   
+          STOVWT= STMWT
+          BIOMAS= (LFWT + STMWT + BASLFWT)*PLTPOP 
+         
+         
+             
+    
+      CASE (2)       !CASE (2)
+          GROSTM = 0.0  ! Daily stem growth (g/plant/day) 
+          YRDOY   = CONTROL % YRDOY
+          DAP4    = YRDOY-YRPLT
+          DAP5    = DAP4-DAP3
+          GDDFR   = SUMDTTGRO/DAP5  !cuando intente hacer esto en CASE (3) debo recordar que debo poner la variable SUMDTTGRO en Phenol Case(3)
+          TMAXGRO = SUMTMAXGRO/DAP5
+          SRADGRO = SUMSRADGRO/(DAP5)
+          PARGRO  = SUMPARGRO/(DAP5)
 
-        CASE (3)
+   !   LAI=(PLA-SENLA)*PLTPOP*0.0001 *        !   y = -0.0946x2 + 1.1978x - 1.9054
+   !  &    (-0.0946*GDDFR**2+1.1978*GDDFR-1.9054)   
+   !   BIOMAS = WTINITIAL*PLTPOP * !Quiero quitar que esta formula de aqui en adelante considere WTINITIAL me parece incorrecto sino que considere PLA          
+   ! &         (0.0034*GDDFR**2-0.0392*GDDFR+1.0369) ! CUANDO TENGA LOS PESOS SECOS DEBO AJUSTAR ESTA ECUACIï¿½N
+       BIOMAS = DAP5
+       
+        CASE (3)      !CASE (3)
 !          IF (NFORCING .GE. 2) THEN
              ! Forcing by number of days after planting
              PLANTSIZE = TOTPLTWT
-!          ELSE    
+
+             !          ELSE    
 !             PLANTSIZE = PLANTING % PLANTSIZE
 !          ENDIF
+          
+          YRDOY   = CONTROL % YRDOY
+          DAP6    = YRDOY-YRPLT
+          DAP7    = DAP6-DAP4
+          GDDFR   = SUMDTTGRO/DAP7  
+          TMAXGRO = SUMTMAXGRO/DAP7
+          SRADGRO = SUMSRADGRO/(DAP7)
+          PARGRO  = SUMPARGRO/(DAP7)
+          
           FBIOM  = BIOMAS               
           SUMP   = 0.0                  
           IDURP  = 0                    
@@ -1121,14 +1021,26 @@ C-----------------------------------------------------------------------
           FLRWT  = 0.0
           FRTWT  = 0.0
           CRWNWT = 0.0
+
+
 !-------------------------------------------------------- NEW  JVJ  Case duplicated because 2 stages in vegetative phase were included 
-         CASE (4)
+         CASE (4)          !CASE (4)
 !          IF (NFORCING .GE. 2) THEN
              ! Forcing by number of days after planting
              PLANTSIZE = TOTPLTWT
 !          ELSE    
 !             PLANTSIZE = PLANTING % PLANTSIZE
 !          ENDIF
+          
+          YRDOY   = CONTROL % YRDOY
+          DAP8    = YRDOY-YRPLT
+          DAP9    = DAP8-DAP6
+          GDDFR   = SUMDTTGRO/DAP9  
+          TMAXGRO = SUMTMAXGRO/DAP9
+          SRADGRO = SUMSRADGRO/(DAP9)
+          PARGRO  = SUMPARGRO/(DAP9)
+          
+          
           FBIOM  = BIOMAS               
           SUMP   = 0.0                  
           IDURP  = 0                    
@@ -1140,13 +1052,23 @@ C-----------------------------------------------------------------------
           FRTWT  = 0.0
           CRWNWT = 0.0
   
-         CASE (5)                                                                !  JVJ  Case duplicated because 2 stages in vegetative phase were included 
+         CASE (5)      !CASE (5)                                                          !  JVJ  Case duplicated because 2 stages in vegetative phase were included 
 !          IF (NFORCING .GE. 2) THEN
              ! Forcing by number of days after planting
              PLANTSIZE = TOTPLTWT
 !          ELSE    
 !             PLANTSIZE = PLANTING % PLANTSIZE
 !          ENDIF
+          
+          YRDOY   = CONTROL % YRDOY
+          DAP10    = YRDOY-YRPLT
+          DAP11    = DAP10-DAP8
+          GDDFR   = SUMDTTGRO/DAP11  
+          TMAXGRO = SUMTMAXGRO/DAP11
+          SRADGRO = SUMSRADGRO/(DAP11)
+          PARGRO  = SUMPARGRO/(DAP11)
+          
+                  
           FBIOM  = BIOMAS               
           SUMP   = 0.0                  
           IDURP  = 0                    
@@ -1161,7 +1083,17 @@ C-----------------------------------------------------------------------
           
           
 !---------------------------------------------------------NEW END JVJ  Case duplicated because 2 stages in vegetative phase were included  
-        CASE (6)                                      !     CASE (4)
+        CASE (6)        !CASE (6)                               !     CASE (4)
+          
+          YRDOY   = CONTROL % YRDOY
+          DAP12    = YRDOY-YRPLT
+          DAP13    = DAP12-DAP10
+          GDDFR   = SUMDTTGRO/DAP13  
+          TMAXGRO = SUMTMAXGRO/DAP13
+          SRADGRO = SUMSRADGRO/(DAP13)
+          PARGRO  = SUMPARGRO/(DAP13)
+
+          
 !         MaxLAI = LAI at the end of the stage
           MAXLAI      = LAI               
 !         Above biomass per square meter (g/m^2)
@@ -1186,8 +1118,17 @@ C         ABIOMS      = BIOMAS
           VANC   = TANC                 
           VMNC   = TMNC                 
 
-        CASE (7)                       !   CASE (5)
+        CASE (7)       ! CASE (7)                  !   CASE (5)
 
+          YRDOY   = CONTROL % YRDOY
+          DAP14    = YRDOY-YRPLT
+          DAP15    = DAP14-DAP12
+          GDDFR   = SUMDTTGRO/DAP15  
+          TMAXGRO = SUMTMAXGRO/DAP15
+          SRADGRO = SUMSRADGRO/(DAP15)
+          PARGRO  = SUMPARGRO/(DAP15)
+
+          
 !         Move from Istage 4 because no actual fruits until stage 5
           FRUITS = PLTPOP*(1.-0.10*PLTPOP/14.0)  
 !         There will be some loss of mass when going from flower mass
@@ -1204,8 +1145,16 @@ C         ABIOMS      = BIOMAS
           SWMAX  = 0.0
           SWMIN  = 0.0
 
-        CASE (8)                       !   CASE (5)  JVJ  Case duplicated because 1 stage in reproductive phase were included 
+        CASE (8)    !CASE (8)                    !   CASE (5)  JVJ  Case duplicated because 1 stage in reproductive phase were included 
+          YRDOY   = CONTROL % YRDOY
+          DAP16    = YRDOY-YRPLT
+          DAP17    = DAP16-DAP14
+          GDDFR   = SUMDTTGRO/DAP17  
+          TMAXGRO = SUMTMAXGRO/DAP17
+          SRADGRO = SUMSRADGRO/(DAP17)
+          PARGRO  = SUMPARGRO/(DAP17)
 
+          
 !         Move from Istage 4 because no actual fruits until stage 5
           FRUITS = PLTPOP*(1.-0.10*PLTPOP/14.0)  
 !         There will be some loss of mass when going from flower mass
@@ -1222,7 +1171,17 @@ C         ABIOMS      = BIOMAS
           SWMAX  = 0.0
           SWMIN  = 0.0
           
-        CASE (9)                                  ! CASE (6)
+        CASE (9)       !CASE (9)                            ! CASE (6)
+          
+          YRDOY   = CONTROL % YRDOY
+          DAP18    = YRDOY-YRPLT
+          DAP19    = DAP18-DAP16
+          GDDFR   = SUMDTTGRO/DAP19  
+          TMAXGRO = SUMTMAXGRO/DAP19
+          SRADGRO = SUMSRADGRO/(DAP19)
+          PARGRO = SUMPARGRO/(DAP19)
+         
+          
           YIELD = FRTWT*10.0*FRUITS        
 !         IF (PLTPOP .GE. 0.0) THEN
 !            IF (GPP .GT. 0.0) THEN
@@ -1237,17 +1196,97 @@ C         ABIOMS      = BIOMAS
 !         ENDIF
 !         HBIOM  = BIOMAS                 ! Record biomass at fruit harvest date
 
-        CASE (11)                          !  CASE (8)
+
+       CASE (10)       !CASE (9)                            ! CASE (6)
+          
+          YRDOY   = CONTROL % YRDOY
+          DAP18    = YRDOY-YRPLT
+          DAP19    = DAP18-DAP16
+          GDDFR   = SUMDTTGRO/DAP19  
+          TMAXGRO = SUMTMAXGRO/DAP19
+          SRADGRO = SUMSRADGRO/(DAP19)
+          PARGRO  = SUMPARGRO/(DAP19) 
+         
+          
+          YIELD = FRTWT*10.0*FRUITS        
+!         IF (PLTPOP .GE. 0.0) THEN
+!            IF (GPP .GT. 0.0) THEN
+!               EYEWT = FRTWT/GPP
+!            ENDIF
+!            PEYEWT = EYEWT*1000.0            
+!            GPSM   = GPP*FRUITS              
+!            STOVER = BIOMAS*10.0-YIELD       
+!            YIELD  = YIELD / Species % FDMC  
+!            YIELDB = YIELD/0.8914            
+            STGDOY (ISTAGE) = YRDOY
+!         ENDIF
+!         HBIOM  = BIOMAS                 ! Record biomass at fruit harvest date
+
+        CASE (11) 
+        YRDOY   = CONTROL % YRDOY
+        YRPLT   = YRDOY
+        STGDOY (ISTAGE) = YRDOY
+
+        CASE (12)          !CASE (11)                  !  CASE (8)
           WTINITIAL = SDWTPL/(PLTPOP*10.0)        ! kg/ha  --> g/plt
 
-          PLA        = WTINITIAL*49.61     !PLA        = WTINITIAL*0.6*63.0  OJO esta era la fórmula original agregué esa constante para cuadrar el resultado tengo un libro de excel con estos calculos.
-          LAI        = PLTPOP*PLA*0.0001     !
-          BIOMAS     = WTINITIAL*PLTPOP      ! Este cambio quedó en el archivo dscsm047.exe que se ejecuta actualmente en esta máquina.
-          LFWT       = WTINITIAL*0.97        ! LFWT       = WTINITIAL*0.53 No encontré donde está la variable del archivo T  LWDA es esta o sale de aqui La definición en el archivo T es Leaf Weight  kg dm/ha
-          BASLFWT    = LFWT*0.66             ! Esto es un peso del tejido blanco basal (ojo yo no separé esto y parece muy buena idea) 
-          STMWT      = WTINITIAL*0.03       ! STMWT      = WTINITIAL*0.115 Tampoco está la variable del archivo T SWDA pero es esta o sale de aqui STMWT
+          PLA        = WTINITIAL*41.1048     ! 41.1048 es un promedio (desvest= 3.09) de la relaciÃ³n porcentual entre el peso seco de la semilla Sucker al momento de la siembra en tres momentos diferentes del aÃ±o y el area del tejido verde de la hoja.
+          PLA12      = PLA
+          LAI        = PLTPOP*PLA*0.0001     !         
+          BIOMAS     = WTINITIAL*PLTPOP      !
+          LFWT       = WTINITIAL*0.6909      ! 0.6909 es un promedio (desvest= 0.03) de la relaciÃ³n porcentual entre el peso seco de la semilla Sucker al momento de la siembra en tres momentos diferentes del aÃ±o y el peso seco del tejido verde de la hoja.
+          LFWT12     =LFWT 
+          BASLFWT    = LFWT*0.1927           ! 0.1927 es un promedio (desvest= 0.04) de la relaciÃ³n porcentual entre el peso seco de la semilla Sucker al momento de la siembra en tres momentos diferentes y el peso seco del tejido blanco basal.
+          BASLFWT12  = BASLFWT 
+          STMWT      = WTINITIAL*0.1164      ! 0.1122 es un promedio (desvest= 0.01) de la relaciÃ³n porcentual entre el peso seco de la semilla Sucker al momento de la siembra en tres momentos diferentes y el peso seco del tallo.
+          STMWT12    = STMWT
           STOVWT     = WTINITIAL             ! 
+          YRDOY   = CONTROL % YRDOY
+          YRPLT   = YRDOY
+          
+          DAP0 = CONTROL % DAS
 
+          GDDFR   = 0     ! Esto es el dia de la siembra solamente, no se acumula nada.
+          GDDFR12 = GDDFR ! Esto es el dia de la siembra solamente, no se acumula nada.
+          TMAXGRO = 0     ! Esto es el dia de la siembra solamente, no se acumula nada. 
+          SRADGRO = 0     ! Esto es el dia de la siembra solamente, no se acumula nada.
+          PARGRO  = 0      ! Esto es el dia de la siembra solamente, no se acumula nada.
+      
+         
+      
+      CASE (13)        !CASE (12)                   
+          YRDOY   = CONTROL % YRDOY   ! Esto hala la fecha del dia que se cumple la etapa iniciacion de la raiz
+          DAP1     = YRDOY-YRPLT      ! Estos son los dias desde la siembra hasta que se cumple la etapa iniciacion de la raiz
+          GDDFR   = (SUMDTTGRO - SUMDTT)/(DAP1)  ! Esto es el promedio de GDD que se acumulan desde la siembra hasta que Phenol detona el evento iniciacion de la raiz.
+          GDDFR13 = GDDFR
+          TMAXGRO = (SUMTMAXGRO - SUMTMAX)/(DAP1)  ! Este esta ok asi porque el dia de la siembra no acumula GDD pero en la etapa siguiente se le debe restar el dia presente de lo contrario la temperatura maxima promedio es mayor a lo correcto
+          SRADGRO = (SUMSRADGRO - SUMSRAD)/(DAP1)  ! Este esta ok asi porque el dia de la siembra no acumula GDD pero en la etapa siguiente se le debe restar el dia presente de lo contrario la radiacion promedio es mayor a lo correcto
+          PARGRO =  (SUMPARGRO - SUMPAR)/(DAP1)    ! Este esta ok asi porque el dia de la siembra no acumula GDD pero en la etapa siguiente se le debe restar el dia presente de lo contrario PAR promedio es mayor a lo correcto
+      
+        
+         RLAE13    = 0.002 * (LOG(GDDFR13/TMAXGRO)) + 0.0018               !r2= 0.8955  Listo variable calibrada en CASE (13)
+         PLA13     = PLA*EXP((RLAE13*((GDDFR13*TMAXGRO)-0)))                  
+         
+         RLDW13    = 3.8534 * (LOG(GDDFR13/TMAXGRO)) + 3.3698                 !r2= 0.9488 Listo variable calibrada en CASE (13) 
+         LFWT13    = LFWT12*EXP(((RLDW13/1000)*((GDDFR13*TMAXGRO)-0)))        
+         
+         RBWTDW13   = -4.0651 * (LOG(GDDFR13/TMAXGRO)) - 3.2231               !r2= 0.9357 Listo variable calibrada en CASE (13)
+         BASLFWT13 = BASLFWT12*EXP(((RBWTDW13/1000)*((GDDFR13*TMAXGRO)-0)))
+         
+         RSTMWT13  = 1.3401 * (LOG(GDDFR13/TMAXGRO)) + 1.5783                !r2= 0.9171 Listo variable calibrada en CASE (13)
+         STMWT13   = STMWT12*EXP(((RSTMWT13/1000)*((GDDFR13*TMAXGRO)-0)))
+         
+         
+         LAI13    = PLTPOP*PLA13*0.0001
+
+          LAI         = LAI13                     
+          LFWT        = LFWT13                    
+          BASLFWT     = BASLFWT13                 
+          STMWT       = STMWT13                   
+          STOVWT= STMWT
+          BIOMAS= (LFWT + STMWT + BASLFWT)*PLTPOP                     
+     
+          
 !          NSTRES     = 1.0
 
           IF (ISWNIT .NE. 'N') THEN
@@ -1279,7 +1318,7 @@ C               XPTN = XGNP*6.25
       RETURN
       END SUBROUTINE Aloha_GROSUB
 
-! PLAG (cm^2) is daily green leaf area growth
+! PLAG (cm^2) is daily green leaf area growth    ! O sea debo modificar PLAG para hacer que aumentar el area foliar 
 ! leaf area index (m2 leaf/m2 ground)
 ! LFWT (g/plant) is green leaf weight which is assumed to be 53% of initial crown weight
 ! RTWT (g/plant) is root weight
@@ -1314,6 +1353,7 @@ C               XPTN = XGNP*6.25
 ! EYEWT (G/eye) is weight of the eye
 !FRUITS =  number of fruits=PLTPOP/m2*FRUITING%
 !YIELD = fruit dry weight yield (kg/ha)
-
+! TURFAC      !Soil water stress effect on expansion (0-1), 1 is no stress, 0 is full stress
+! PC          !Used to compute fraction of phyllochron interval occurring today      
 
 
