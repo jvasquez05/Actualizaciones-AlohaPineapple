@@ -238,11 +238,12 @@
             
             XLAI   = LAI
             IF (WTLF .GT. 0.0) THEN
-               SLA  = LAI * 10000 / WTLF   
+               SLA  = LAI * 10000 / WTLF   ! SLA es el área específica de la hoja dividida entre su peso seco.
                                             
-              
+               !SLA  = LAI * 10000 / LWAD
+            
                
-                                           
+
                
                
                

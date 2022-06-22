@@ -134,7 +134,7 @@ C=======================================================================
       P7 = Cultivar % P7
       P8 = Cultivar % P8
       G1 = Cultivar % G1
-      TBASE1  = 16. !????
+      TBASE1  = 16. !???? creo que esto no tiene efecto TBASE1  = 16.
 
 !=================================================================
       CASE (RATE)
@@ -174,7 +174,7 @@ C=======================================================================
 !-----------------------------------------------------------------
 !       Reproductive Phase
         CASE (6,7,8,9)                  !CASE (4,5,6) JVJ Value changed because 2 stages in vegetative phase and one stage in reproductive phase were included
-          IF (TMAX .LT. TBASE) THEN
+          IF (TMAX .LT. TBASE) THEN     !Probar agregar 5 aquí y quitarlo de la anterior
              DTT = 0.0
           ENDIF
           IF (DTT .GT. 0.0) THEN
@@ -341,7 +341,7 @@ C     6 - Physiological maturity
           !
           ! Stage 2 >> Net zero stem growth to forcing
           NDAS   = NDAS + 1               !JVJ Necesario para que la fecha de forza salga correctamente
-          IF (SUMDTT .LT. (P2+P3) ) THEN   !(SUMDTT .LT. (P1+35)) IF (SUMDTT .LT. (P1+P8) .AND. LN .LT. 26) THEN
+          IF (SUMDTT .LT. (P3) ) THEN   !(SUMDTT .LT. (P1+35)) IF (SUMDTT .LT. (P1+P8) .AND. LN .LT. 26) THEN
              RETURN                       ! Cicle 1 to Cicle 2
           ENDIF
 
@@ -358,7 +358,7 @@ C     6 - Physiological maturity
          ! Stage 3 >> Forcing to sepals closed on youngest flowers
           !
           NDAS   = NDAS + 1               !JVJ Necesario para que la fecha de forza salga correctamente
-          IF (SUMDTT .LT. (P2+P3+P4) ) THEN   !(SUMDTT .LT. (P1+35+65)) IF (SUMDTT .LT. (P1+P8+TC) .AND. LN .LT. 39) THEN
+          IF (SUMDTT .LT. (P4) ) THEN   !(SUMDTT .LT. (P1+35+65)) IF (SUMDTT .LT. (P1+P8+TC) .AND. LN .LT. 39) THEN
              RETURN                       ! Cicle 2 to Cicle 3
           ENDIF
 

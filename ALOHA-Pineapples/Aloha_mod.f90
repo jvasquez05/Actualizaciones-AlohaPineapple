@@ -53,7 +53,7 @@
         'PhMaturity', &   ! 8         For MD-2 producers, physiological maturity is important because it defines the timing of degreening the fruit
         'Fruit Harv', &   ! 9         The concept of previous physiological maturity of the Aloha Pineapple model is very different, so the values have been modified.
         'Planting  ', &   !10
-        'WhRoottips', &   !11         Root Init.
+        'Root Init.', &   !11         WhRoottips
         'Leaf Emerg', &   !12
         '          ', &   !13
         'Start Sim ', &   !14
