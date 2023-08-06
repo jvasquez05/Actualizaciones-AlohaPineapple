@@ -11,14 +11,14 @@
 
 !     Global CSM Version Number
       TYPE VersionType
-        INTEGER :: Major = @MAJOR@
-        INTEGER :: Minor = @MINOR@
-        INTEGER :: Model = @MODEL@
-        INTEGER :: Build = @BUILD@
+        INTEGER :: Major = 4
+        INTEGER :: Minor = 8
+        INTEGER :: Model = 0
+        INTEGER :: Build = 20
       END TYPE VersionType
       TYPE (VersionType) Version
 !     CMake no longer able to change the branch name, do it manually.      
-!     CHARACTER(len=*), PARAMETER :: VBranch = '-@BRANCH@'
+!     CHARACTER(len=*), PARAMETER :: VBranch = '-Pineapple'
       CHARACTER(len=*), PARAMETER :: VBranch = '-develop'
 
 !     Version history:  
